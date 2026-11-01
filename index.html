@@ -6,12 +6,12 @@
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>MindSync Agent — Segundo Cerebro & Agenda</title>
+  <title>MindSync Agent — Segundo Cerebro & Agenda en Tiempo Real</title>
   
   <!-- Tailwind CSS -->
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   
-  <!-- Firebase SDKs (Compatibles y oficiales de Google) -->
+  <!-- Firebase SDKs Oficiales -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
@@ -56,13 +56,13 @@
         <div class="flex items-center gap-2">
           <h1 class="font-bold text-base leading-tight tracking-tight text-[var(--foreground,#f8fafc)]">MindSync</h1>
           
-          <!-- Badge de sincronización Firebase / Local -->
-          <button onclick="openConfigModal()" id="sync-status-badge" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition cursor-pointer">
-            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-            <span id="sync-status-text">Memoria Local</span>
+          <!-- Badge de sincronización en vivo -->
+          <button onclick="openConfigModal()" id="sync-status-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/20 transition cursor-pointer">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="sync-status-text">🔥 En Vivo (Firebase)</span>
           </button>
         </div>
-        <p class="text-[11px] text-[var(--muted-foreground,#94a3b8)] hidden sm:block">Segundo Cerebro con Sincronización en Tiempo Real</p>
+        <p class="text-[11px] text-[var(--muted-foreground,#94a3b8)] hidden sm:block">Segundo Cerebro — Sincronización en Tiempo Real</p>
       </div>
     </div>
 
@@ -84,8 +84,8 @@
 
     <!-- Acciones Rápidas -->
     <div class="flex items-center gap-2">
-      <button onclick="openConfigModal()" class="p-2 text-xs font-medium rounded-lg border border-[var(--border,#334155)] bg-[var(--card,#1e293b)] hover:bg-[var(--secondary,#334155)] text-[var(--muted-foreground,#94a3b8)] hover:text-white transition flex items-center gap-1" title="Configurar Firebase / Gemini">
-        <span>⚙️</span> <span class="hidden sm:inline text-[11px]">Sincronización</span>
+      <button onclick="openConfigModal()" class="p-2 text-xs font-medium rounded-lg border border-[var(--border,#334155)] bg-[var(--card,#1e293b)] hover:bg-[var(--secondary,#334155)] text-[var(--muted-foreground,#94a3b8)] hover:text-white transition flex items-center gap-1" title="Ajustes">
+        <span>⚙️</span>
       </button>
       <button onclick="openExportModal()" class="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[var(--border,#334155)] bg-[var(--card,#1e293b)] hover:bg-[var(--secondary,#334155)] transition flex items-center gap-1 text-[var(--foreground,#f8fafc)]">
         <span>💾</span> <span class="hidden sm:inline">Exportar</span>
@@ -192,7 +192,7 @@
               <span class="text-sm font-semibold text-[var(--foreground,#f8fafc)]">📅 Agenda & Cronograma</span>
               <span id="event-count" class="text-[11px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">4 eventos</span>
             </div>
-            <span class="text-[11px] text-[var(--muted-foreground,#94a3b8)]" id="cloud-indicator">Sync activo</span>
+            <span class="text-[11px] text-emerald-400 font-medium" id="cloud-indicator">Sincronizado en la nube</span>
           </div>
           <div id="events-list" class="flex-1 p-3 overflow-y-auto space-y-2.5 custom-scrollbar"></div>
         </div>
@@ -247,48 +247,40 @@
 
   </main>
 
-  <!-- MODAL DE CONFIGURACIÓN (FIREBASE + GEMINI) -->
+  <!-- MODAL DE CONFIGURACIÓN -->
   <div id="config-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-2xl max-w-lg w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
       <div class="flex items-center justify-between pb-3 border-b border-[var(--border,#334155)] mb-4">
         <h3 class="font-bold text-sm text-[var(--foreground,#f8fafc)] flex items-center gap-2">
-          <span>🔥</span> Sincronización en Tiempo Real (Firebase)
+          <span>🔥</span> Sincronización en Tiempo Real
         </h3>
         <button onclick="closeConfigModal()" class="text-xs text-[var(--muted-foreground,#94a3b8)] hover:text-white">✕</button>
       </div>
 
       <div class="space-y-4 text-xs">
         
-        <!-- ESTADO ACTUAL FIREBASE -->
-        <div id="firebase-active-banner" class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300">
-          <p class="font-semibold text-xs">Estado: Modo Memoria Local</p>
-          <p class="text-[11px] text-[var(--muted-foreground,#94a3b8)] mt-0.5">Para sincronizar en vivo entre tu teléfono, tablet y computadora, pega aquí la configuración de tu proyecto Firebase (gratuito).</p>
+        <div id="firebase-active-banner" class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
+          <p class="font-semibold text-xs">✓ Conectado a Firebase: mapamental-sync</p>
+          <p class="text-[11px] text-[var(--muted-foreground,#94a3b8)] mt-0.5">Tus cambios se replican instantáneamente en tu teléfono, computadora y tablet.</p>
         </div>
 
-        <!-- CONFIG FIREBASE INPUT -->
         <div>
-          <label class="block font-semibold mb-1 text-[var(--muted-foreground,#94a3b8)]">
-            Objeto de Configuración Firebase (JSON o JS)
-          </label>
-          <textarea id="firebase-config-input" rows="7" placeholder='{\n  "apiKey": "AIzaSy...",\n  "authDomain": "tu-proyecto.firebaseapp.com",\n  "projectId": "tu-proyecto",\n  "storageBucket": "tu-proyecto.appspot.com",\n  "messagingSenderId": "...",\n  "appId": "..."\n}' class="w-full bg-[var(--background,#0f172a)] border border-[var(--border,#334155)] rounded-xl p-3 text-xs font-mono text-white focus:outline-none focus:border-indigo-500"></textarea>
-          <p class="text-[11px] text-[var(--muted-foreground,#64748b)] mt-1">Obtén esto en Firebase Console &gt; Configuración del proyecto &gt; Tus apps &gt; Web (&lt;/&gt;).</p>
+          <label class="block font-semibold mb-1 text-[var(--muted-foreground,#94a3b8)]">Proyecto Firebase Activo</label>
+          <input type="text" readonly value="mapamental-sync" class="w-full bg-[var(--background,#0f172a)] border border-[var(--border,#334155)] rounded-lg p-2.5 text-xs text-indigo-300 font-mono">
         </div>
 
-        <!-- GEMINI API KEY -->
-        <div class="pt-3 border-t border-[var(--border,#334155)]">
-          <label class="block font-semibold mb-1 text-[var(--muted-foreground,#94a3b8)]">Gemini API Key (Opcional para IA avanzada)</label>
+        <div class="pt-2 border-t border-[var(--border,#334155)]">
+          <label class="block font-semibold mb-1 text-[var(--muted-foreground,#94a3b8)]">Gemini API Key (Opcional)</label>
           <input type="password" id="gemini-key-input" placeholder="AIzaSy..." class="w-full bg-[var(--background,#0f172a)] border border-[var(--border,#334155)] rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+          <p class="text-[11px] text-[var(--muted-foreground,#64748b)] mt-1">Si la agregas, usa modelos avanzados de Gemini en la nube para clasificaciones complejas.</p>
         </div>
 
-        <div class="pt-3 border-t border-[var(--border,#334155)] flex flex-wrap justify-between items-center gap-2">
-          <button onclick="saveConfigurations()" class="px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-lg font-medium transition shadow-sm">
-            Guardar y Conectar
+        <div class="pt-3 border-t border-[var(--border,#334155)] flex justify-between items-center">
+          <button onclick="saveGeminiKey()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition">
+            Guardar Cambios
           </button>
-          <button onclick="disconnectFirebase()" id="btn-disconnect-fb" class="px-3 py-2 text-rose-400 hover:text-rose-300 text-xs hidden transition">
-            Desconectar Firebase
-          </button>
-          <button onclick="resetDataConfirmation()" class="px-3 py-2 text-[var(--muted-foreground,#94a3b8)] hover:text-white text-xs transition">
-            Restablecer a valores de fábrica
+          <button onclick="resetDataConfirmation()" class="px-3 py-2 text-rose-400 hover:text-rose-300 transition text-xs">
+            Restablecer Datos
           </button>
         </div>
       </div>
@@ -327,10 +319,19 @@
     </div>
   </div>
 
-  <!-- SCRIPT CON FIREBASE REALTIME Y PERSISTENCIA -->
+  <!-- LÓGICA CONEXIÓN FIREBASE EN TIEMPO REAL -->
   <script>
+    // CONFIGURACIÓN DE FIREBASE POR DEFECTO DEL USUARIO
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyD5eA2WE6sf3xFfdaX8djTv8kuMQJTzsSQ",
+      authDomain: "mapamental-sync.firebaseapp.com",
+      projectId: "mapamental-sync",
+      storageBucket: "mapamental-sync.firebasestorage.app",
+      messagingSenderId: "631457072149",
+      appId: "1:631457072149:web:871b2059246e2cb1023a1c"
+    };
+
     const STORAGE_KEY = 'mindsync_state_v1';
-    const FIREBASE_CONFIG_KEY = 'mindsync_firebase_config';
     const API_KEY_STORAGE = 'mindsync_gemini_key';
 
     const DEFAULT_STATE = {
@@ -462,42 +463,35 @@
       }
     }
 
-    // SINCRONIZACIÓN CON FIRESTORE (DEBOUNCED)
     function scheduleFirestoreSync() {
       if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
       syncDebounceTimer = setTimeout(() => {
         if (!db) return;
+        // Guardamos como objeto directo en Firestore
         db.collection('mindsync').doc('state').set(state)
           .then(() => {
-            console.log('✓ Estado sincronizado en tiempo real con Firebase.');
+            console.log('✓ Sincronizado en tiempo real con Firebase Firestore');
           })
           .catch(err => {
-            console.error('Error sincronizando con Firebase:', err);
+            console.error('Error escribiendo en Firebase:', err);
           });
-      }, 250);
+      }, 300);
     }
 
-    // INICIALIZACIÓN DE FIREBASE
-    function initFirebaseFromStorage() {
-      const savedConfig = localStorage.getItem(FIREBASE_CONFIG_KEY);
-      if (!savedConfig) {
-        updateSyncBadge(false);
-        return;
-      }
-
+    // CONEXIÓN AUTOMÁTICA A FIREBASE
+    function initFirebase() {
       try {
-        const config = JSON.parse(savedConfig);
         if (!firebase.apps.length) {
-          firebase.initializeApp(config);
+          firebase.initializeApp(FIREBASE_CONFIG);
         }
         db = firebase.firestore();
 
-        // Escuchar cambios en vivo desde cualquier dispositivo
+        // Escucha en tiempo real de cambios remotos
         if (unsubscribeFirestore) unsubscribeFirestore();
         unsubscribeFirestore = db.collection('mindsync').doc('state').onSnapshot((doc) => {
           if (doc.exists) {
             const remoteData = doc.data();
-            if (remoteData && remoteData.updatedAt !== state.updatedAt) {
+            if (remoteData && remoteData.mindmap && remoteData.updatedAt !== state.updatedAt) {
               isRemoteUpdate = true;
               state = remoteData;
               persistState(false);
@@ -507,47 +501,41 @@
               isRemoteUpdate = false;
             }
           } else {
-            // Primer inicio en Firestore: guardar el estado inicial
+            // Si el documento en la nube aún no existe, lo inicializamos con los datos por defecto
             scheduleFirestoreSync();
           }
+          updateSyncBadge(true);
         }, (error) => {
-          console.error("Error en escucha Firebase:", error);
-          updateSyncBadge(false, "Error de Conexión");
+          console.error("Error en conexión en vivo con Firebase:", error);
+          updateSyncBadge(false, "Revisar Permisos");
         });
-
-        updateSyncBadge(true);
-        document.getElementById('firebase-config-input').value = JSON.stringify(config, null, 2);
-        document.getElementById('btn-disconnect-fb').classList.remove('hidden');
       } catch (err) {
-        console.error("Configuración de Firebase inválida:", err);
-        updateSyncBadge(false, "Config Inválida");
+        console.error("Error inicializando Firebase:", err);
+        updateSyncBadge(false, "Modo Local");
       }
     }
 
     function updateSyncBadge(isConnected, customText = null) {
       const badge = document.getElementById('sync-status-badge');
       const text = document.getElementById('sync-status-text');
-      const banner = document.getElementById('firebase-active-banner');
       const indicator = document.getElementById('cloud-indicator');
 
       if (isConnected) {
-        badge.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition cursor-pointer';
+        badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/20 transition cursor-pointer';
         badge.querySelector('span').className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse';
         text.textContent = '🔥 En Vivo (Firebase)';
-        if (banner) {
-          banner.className = 'p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300';
-          banner.innerHTML = '<p class="font-semibold text-xs">✓ Conectado a Firebase en Tiempo Real</p><p class="text-[11px] text-[var(--muted-foreground,#94a3b8)] mt-0.5">Tus cambios se reflejan al instante en todos tus dispositivos.</p>';
+        if (indicator) {
+          indicator.textContent = 'Sincronizado en la nube';
+          indicator.className = 'text-[11px] text-emerald-400 font-medium';
         }
-        if (indicator) indicator.textContent = 'En vivo en la nube';
       } else {
-        badge.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition cursor-pointer';
+        badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition cursor-pointer';
         badge.querySelector('span').className = 'w-1.5 h-1.5 rounded-full bg-amber-400';
         text.textContent = customText || 'Memoria Local';
-        if (banner) {
-          banner.className = 'p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300';
-          banner.innerHTML = '<p class="font-semibold text-xs">Estado: Modo Memoria Local</p><p class="text-[11px] text-[var(--muted-foreground,#94a3b8)] mt-0.5">Pega la configuración de tu proyecto Firebase para habilitar sincronización en vivo multidispositivo.</p>';
+        if (indicator) {
+          indicator.textContent = 'Guardado local';
+          indicator.className = 'text-[11px] text-amber-400 font-medium';
         }
-        if (indicator) indicator.textContent = 'Guardado local';
       }
     }
 
@@ -565,7 +553,7 @@
       renderAgenda();
       renderTasks();
       setupPanZoomAndTouch();
-      initFirebaseFromStorage();
+      initFirebase();
 
       const savedGeminiKey = localStorage.getItem(API_KEY_STORAGE);
       if (savedGeminiKey) document.getElementById('gemini-key-input').value = savedGeminiKey;
@@ -677,7 +665,7 @@
       });
 
       window.addEventListener('mouseup', () => {
-        if (draggedNode) persistState();
+        if (draggedNode) persistState(true);
         draggedNode = null;
         isPanning = false;
       });
@@ -697,7 +685,7 @@
       }, { passive: false });
 
       window.addEventListener('touchend', () => {
-        if (draggedNode) persistState();
+        if (draggedNode) persistState(true);
         draggedNode = null;
         isPanning = false;
       });
@@ -783,7 +771,7 @@
       state.mindmap.nodes = state.mindmap.nodes.filter(n => n.id !== selectedNodeId);
       state.mindmap.links = state.mindmap.links.filter(l => l.source !== selectedNodeId && l.target !== selectedNodeId);
       closeInspector();
-      persistState();
+      persistState(true);
       renderMindMap();
     }
 
@@ -851,7 +839,7 @@
       const task = state.tasks.find(t => t.id === id);
       if (task) {
         task.completed = !task.completed;
-        persistState();
+        persistState(true);
         renderTasks();
       }
     }
@@ -909,7 +897,7 @@
 
       const btn = document.getElementById('btn-process');
       btn.disabled = true;
-      btn.innerHTML = '<span>⏳ Procesando...</span>';
+      btn.innerHTML = '<span>⏳ Sincronizando...</span>';
 
       const apiKey = localStorage.getItem(API_KEY_STORAGE);
       const extractedItems = [];
@@ -1054,53 +1042,16 @@ Texto: "${text}"`;
       document.getElementById('config-modal').classList.add('hidden');
     }
 
-    function saveConfigurations() {
-      const rawFirebase = document.getElementById('firebase-config-input').value.trim();
+    function saveGeminiKey() {
       const geminiKey = document.getElementById('gemini-key-input').value.trim();
-
       if (geminiKey) localStorage.setItem(API_KEY_STORAGE, geminiKey);
       else localStorage.removeItem(API_KEY_STORAGE);
-
-      if (rawFirebase) {
-        try {
-          // Limpiar si viene con "const firebaseConfig = "
-          let cleanStr = rawFirebase;
-          if (cleanStr.includes('=')) cleanStr = cleanStr.substring(cleanStr.indexOf('=') + 1);
-          if (cleanStr.endsWith(';')) cleanStr = cleanStr.slice(0, -1);
-          
-          // Evaluar o parsear objeto
-          const parsed = (new Function(`return ${cleanStr}`))();
-          if (parsed && parsed.projectId) {
-            localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(parsed));
-            initFirebaseFromStorage();
-            alert('¡Configuración de Firebase guardada! Conectando en tiempo real...');
-          } else {
-            alert('El objeto de configuración debe incluir al menos "projectId".');
-            return;
-          }
-        } catch (err) {
-          alert('Error leyendo la configuración de Firebase: ' + err.message);
-          return;
-        }
-      }
-
       closeConfigModal();
-    }
-
-    function disconnectFirebase() {
-      if (confirm('¿Desconectar Firebase y volver a modo local?')) {
-        localStorage.removeItem(FIREBASE_CONFIG_KEY);
-        if (unsubscribeFirestore) unsubscribeFirestore();
-        db = null;
-        updateSyncBadge(false);
-        document.getElementById('firebase-config-input').value = '';
-        document.getElementById('btn-disconnect-fb').classList.add('hidden');
-        closeConfigModal();
-      }
+      alert('Configuración guardada.');
     }
 
     function resetDataConfirmation() {
-      if (confirm('¿Restablecer todo a los datos iniciales? Se perderán las notas personalizadas no exportadas.')) {
+      if (confirm('¿Restablecer todo a los datos iniciales? Se actualizará también en Firebase.')) {
         localStorage.removeItem(STORAGE_KEY);
         state = JSON.parse(JSON.stringify(DEFAULT_STATE));
         persistState(true);
@@ -1159,7 +1110,7 @@ Texto: "${text}"`;
             renderAgenda();
             renderTasks();
             closeExportModal();
-            alert('¡Datos importados con éxito!');
+            alert('¡Datos importados y sincronizados con éxito!');
           } else {
             alert('El archivo JSON no tiene la estructura requerida.');
           }
