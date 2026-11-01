@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>MindSync Agent — Segundo Cerebro & Agenda</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* Transiciones y toque móvil fluido */
+    .node-transition {
+      transition: transform 0.1s ease-out;
+    }
+    .node-item:hover {
+      filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.4));
+      cursor: grab;
+    }
+    .node-item:active {
+      cursor: grabbing;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.25);
+      border-radius: 4px;
+    }
+    /* Deshabilitar selección de texto durante arrastre en móvil */
+    .no-select {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+  </style>
+</head>
+<body class="bg-[var(--background,#0f172a)] text-[var(--foreground,#f8fafc)] antialiased min-h-screen flex flex-col font-sans no-select">
+
+  <!-- HEADER / BARRA SUPERIOR RESPONSIVE -->
+  <header class="border-b border-[var(--border,#1e293b)] bg-[var(--card,#1e293b)]/90 backdrop-blur-md px-4 py-3 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-40">
+    <div class="flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white font-bold text-base flex-shrink-0">
+        🧠
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-bold text-base leading-tight tracking-tight text-[var(--foreground,#f8fafc)]">MindSync</h1>
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            Sync
+          </span>
+        </div>
+        <p class="text-[11px] text-[var(--muted-foreground,#94a3b8)] hidden sm:block">Agenda & Mapa Mental Autónomo</p>
+      </div>
+    </div>
+
+    <!-- Pestañas de Navegación -->
+    <div class="flex items-center gap-1 bg-[var(--background,#0f172a)] p-1 rounded-xl border border-[var(--border,#334155)] text-xs overflow-x-auto max-w-full">
+      <button onclick="switchTab('split')" id="tab-split" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition-all bg-indigo-600 text-white shadow-sm whitespace-nowrap">
+        Híbrido
+      </button>
+      <button onclick="switchTab('map')" id="tab-map" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition-all text-[var(--muted-foreground,#94a3b8)] hover:text-white whitespace-nowrap">
+        Mapa
+      </button>
+      <button onclick="switchTab('agenda')" id="tab-agenda" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition-all text-[var(--muted-foreground,#94a3b8)] hover:text-white whitespace-nowrap">
+        Agenda
+      </button>
+      <button onclick="switchTab('braindump')" id="tab-braindump" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition-all text-[var(--muted-foreground,#94a3b8)] hover:text-white whitespace-nowrap flex items-center gap-1">
+        <span>✨</span> Braindump
+      </button>
+    </div>
+
+    <!-- Acciones Rápidas -->
+    <div class="flex items-center gap-2">
+      <button onclick="openConfigModal()" class="p-2 text-xs font-medium rounded-lg border border-[var(--border,#334155)] bg-[var(--card,#1e293b)] hover:bg-[var(--secondary,#334155)] text-[var(--muted-foreground,#94a3b8)] hover:text-white transition" title="Configurar API Key / Gemini">
+        ⚙️
+      </button>
+      <button onclick="openExportModal()" class="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[var(--border,#334155)] bg-[var(--card,#1e293b)] hover:bg-[var(--secondary,#334155)] transition flex items-center gap-1 text-[var(--foreground,#f8fafc)]">
+        <span>💾</span> <span class="hidden sm:inline">Exportar</span>
+      </button>
+      <button onclick="switchTab('braindump')" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition flex items-center gap-1">
+        <span>+</span> <span class="hidden sm:inline">Nueva Nota</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="flex-1 p-3 sm:p-5 max-w-[1800px] w-full mx-auto flex flex-col">
+
+    <!-- VISTA HÍBRIDA / SPLIT -->
+    <div id="view-split" class="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 h-[calc(100vh-130px)] min-h-[550px]">
+      
+      <!-- LADO IZQUIERDO: MAPA MENTAL SVG (7 COLUMNAS) -->
+      <section id="section-map" class="lg:col-span-7 bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-2xl flex flex-col overflow-hidden shadow-sm relative min-h-[350px]">
+        <div class="p-3 border-b border-[var(--border,#334155)] flex items-center justify-between bg-[var(--card,#1e293b)]/70">
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-semibold text-[var(--foreground,#f8fafc)]">🗺️ Grafo Conceptual</span>
+            <span id="node-count" class="text-[11px] px-2 py-0.5 rounded-full bg-[var(--secondary,#334155)] text-[var(--muted-foreground,#94a3b8)]">11 nodos</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="resetZoom()" class="px-2 py-1 text-xs border border-[var(--border,#334155)] rounded-lg hover:bg-[var(--secondary,#334155)]" title="Centrar">🎯</button>
+            <button onclick="zoomMap(1.15)" class="px-2 py-1 text-xs border border-[var(--border,#334155)] rounded-lg hover:bg-[var(--secondary,#334155)]" title="Acercar">➕</button>
+            <button onclick="zoomMap(0.85)" class="px-2 py-1 text-xs border border-[var(--border,#334155)] rounded-lg hover:bg-[var(--secondary,#334155)]" title="Alejar">➖</button>
+          </div>
+        </div>
+
+        <!-- Canvas SVG del Mapa -->
+        <div class="flex-1 relative bg-gradient-to-b from-[var(--card,#1e293b)] to-[var(--background,#0f172a)] overflow-hidden touch-none" id="canvas-container">
+          <svg id="mindmap-svg" class="w-full h-full cursor-grab active:cursor-grabbing">
+            <defs>
+              <linearGradient id="grad-core" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#6366f1"/>
+                <stop offset="100%" stop-color="#a855f7"/>
+              </linearGradient>
+              <linearGradient id="grad-project" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#059669"/>
+                <stop offset="100%" stop-color="#10b981"/>
+              </linearGradient>
+              <linearGradient id="grad-idea" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#d97706"/>
+                <stop offset="100%" stop-color="#f59e0b"/>
+              </linearGradient>
+              <linearGradient id="grad-task" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#0284c7"/>
+                <stop offset="100%" stop-color="#38bdf8"/>
+              </linearGradient>
+              <linearGradient id="grad-life" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#65a30d"/>
+                <stop offset="100%" stop-color="#84cc16"/>
+              </linearGradient>
+              <linearGradient id="grad-business" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#e11d48"/>
+                <stop offset="100%" stop-color="#f43f5e"/>
+              </linearGradient>
+              <linearGradient id="grad-concept" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#7c3aed"/>
+                <stop offset="100%" stop-color="#9333ea"/>
+              </linearGradient>
+              <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.3"/>
+              </filter>
+            </defs>
+            <g id="viewport-group">
+              <g id="links-group"></g>
+              <g id="nodes-group"></g>
+            </g>
+          </svg>
+
+          <!-- Inspector flotante de nodo -->
+          <div id="node-inspector" class="absolute bottom-3 left-3 right-3 sm:right-auto sm:w-80 bg-[var(--card,#1e293b)]/95 backdrop-blur-md border border-[var(--border,#334155)] rounded-xl p-3.5 shadow-xl hidden transition-all z-20">
+            <div class="flex items-start justify-between gap-2 mb-1.5">
+              <span id="inspect-tag" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400">Concepto</span>
+              <button onclick="closeInspector()" class="text-xs text-[var(--muted-foreground,#94a3b8)] hover:text-white">✕</button>
+            </div>
+            <h4 id="inspect-title" class="font-bold text-sm text-[var(--foreground,#f8fafc)] mb-1">Título</h4>
+            <p id="inspect-desc" class="text-xs text-[var(--muted-foreground,#94a3b8)] mb-2.5">Detalles del nodo.</p>
+            <div class="border-t border-[var(--border,#334155)] pt-2 flex items-center justify-between text-xs">
+              <span class="text-[var(--muted-foreground,#94a3b8)]" id="inspect-conns">Conexiones: 2</span>
+              <button onclick="deleteSelectedNode()" class="text-rose-400 hover:text-rose-300 text-[11px]">Eliminar nodo</button>
+            </div>
+          </div>
+
+          <!-- Leyenda de categorías -->
+          <div class="absolute top-3 left-3 flex flex-wrap gap-1.5 text-[9px] pointer-events-none opacity-85">
+            <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Núcleo</span>
+            <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Proyecto</span>
+            <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">Idea</span>
+            <span class="px-2 py-0.5 rounded-full bg-lime-500/20 text-lime-300 border border-lime-500/30">Vida</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- LADO DERECHO: AGENDA & TAREAS (5 COLUMNAS) -->
+      <section id="section-agenda" class="lg:col-span-5 flex flex-col gap-4 overflow-hidden">
+        
+        <!-- EVENTOS -->
+        <div class="bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-2xl flex flex-col flex-1 shadow-sm overflow-hidden min-h-[220px]">
+          <div class="p-3 border-b border-[var(--border,#334155)] flex items-center justify-between bg-[var(--card,#1e293b)]/70">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold text-[var(--foreground,#f8fafc)]">📅 Agenda & Cronograma</span>
+              <span id="event-count" class="text-[11px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">5 eventos</span>
+            </div>
+            <span class="text-[11px] text-[var(--muted-foreground,#94a3b8)]">Sincronizado</span>
+          </div>
+          <div id="events-list" class="flex-1 p-3 overflow-y-auto space-y-2.5 custom-scrollbar"></div>
+        </div>
+
+        <!-- TAREAS -->
+        <div class="bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-2xl flex flex-col flex-1 shadow-sm overflow-hidden max-h-64">
+          <div class="p-3 border-b border-[var(--border,#334155)] flex items-center justify-between bg-[var(--card,#1e293b)]/70">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold text-[var(--foreground,#f8fafc)]">✅ Tareas Accionables</span>
+              <span id="task-count" class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">3 activas</span>
+            </div>
+          </div>
+          <div id="tasks-list" class="flex-1 p-3 overflow-y-auto space-y-2 custom-scrollbar"></div>
+        </div>
+
+      </section>
+    </div>
+
+    <!-- SECCIÓN BRAINDUMP / ASISTENTE DE ENTRADA -->
+    <div id="view-braindump" class="hidden bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-2xl p-5 sm:p-6 shadow-sm max-w-4xl mx-auto w-full my-auto">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-[var(--foreground,#f8fafc)]">✨ Asistente de Braindump</h2>
+          <p class="text-xs text-[var(--muted-foreground,#94a3b8)]">Vuelca pensamientos, audios o reuniones. El agente los clasifica automáticamente en tu agenda y en tu mapa mental.</p>
+        </div>
+        <button onclick="switchTab('split')" class="text-xs text-[var(--muted-foreground,#94a3b8)] hover:text-white p-1">✕ Cerrar</button>
+      </div>
+
+      <div class="space-y-4">
+        <textarea id="braindump-input" rows="5" class="w-full bg-[var(--background,#0f172a)] border border-[var(--border,#334155)] rounded-xl p-4 text-sm text-[var(--foreground,#f8fafc)] focus:outline-none focus:border-indigo-500 placeholder-[var(--muted-foreground,#64748b)] resize-none" placeholder="Escribe aquí... Ej: Mañana a las 11:30 tengo call con cliente para presupuestos. Y estuve pensando en sumar una funcionalidad de notas de voz al mapa mental..."></textarea>
+
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+          <div class="flex flex-wrap gap-2 text-xs">
+            <button onclick="fillExample(1)" class="px-2.5 py-1 rounded bg-[var(--background,#0f172a)] border border-[var(--border,#334155)] hover:border-indigo-400 text-xs text-[var(--muted-foreground,#94a3b8)] hover:text-white transition">Reunión + Tarea</button>
+            <button onclick="fillExample(2)" class="px-2.5 py-1 rounded bg-[var(--background,#0f172a)] border border-[var(--border,#334155)] hover:border-indigo-400 text-xs text-[var(--muted-foreground,#94a3b8)] hover:text-white transition">Idea de Negocio</button>
+            <button onclick="fillExample(3)" class="px-2.5 py-1 rounded bg-[var(--background,#0f172a)] border border-[var(--border,#334155)] hover:border-indigo-400 text-xs text-[var(--muted-foreground,#94a3b8)] hover:text-white transition">Salud & Rutina</button>
+          </div>
+
+          <button onclick="processBraindump()" id="btn-process" class="px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium text-xs rounded-xl shadow-md flex items-center gap-2 transition ml-auto">
+            <span>✨ Procesar y Guardar</span>
+          </button>
+        </div>
+
+        <div id="braindump-preview" class="hidden mt-4 p-4 rounded-xl bg-[var(--background,#0f172a)] border border-emerald-500/30 text-xs space-y-2">
+          <div class="flex items-center gap-2 text-emerald-400 font-semibold">
+            <span>✓</span> Elementos extraídos y organizados con éxito:
+          </div>
+          <div id="extracted-summary" class="text-[var(--muted-foreground,#94a3b8)] pl-3"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL DE CONFIGURACIÓN DE API KEY (GEMINI) -->
+  <div id="config-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-2xl max-w-md w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-[var(--border,#334155)] mb-4">
+        <h3 class="font-bold text-sm text-[var(--foreground,#f8fafc)]">⚙️ Configuración del Agente</h3>
+        <button onclick="closeConfigModal()" class="text-xs text-[var(--muted-foreground,#94a3b8)] hover:text-white">✕</button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold mb-1 text-[var(--muted-foreground,#94a3b8)]">Gemini API Key (Opcional)</label>
+          <input type="password" id="gemini-key-input" placeholder="AIzaSy..." class="w-full bg-[var(--background,#0f172a)] border border-[var(--border,#334155)] rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+          <p class="text-[11px] text-[var(--muted-foreground,#64748b)] mt-1">Si la agregas, el braindump en GitHub Pages usará la IA de Gemini para clasificaciones complejas. Si no, usa el motor local inteligente sin costo.</p>
+        </div>
+
+        <div class="pt-2 flex justify-between items-center">
+          <button onclick="saveApiKey()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition">
+            Guardar Clave
+          </button>
+          <button onclick="resetDataConfirmation()" class="px-3 py-2 text-rose-400 hover:text-rose-300 transition">
+            Restablecer Datos
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE EXPORTACIÓN & IMPORTACIÓN -->
+  <div id="export-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-2xl max-w-lg w-full p-5 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-[var(--border,#334155)] mb-3">
+        <h3 class="font-bold text-sm text-[var(--foreground,#f8fafc)]">💾 Sincronización & Exportación</h3>
+        <button onclick="closeExportModal()" class="text-xs text-[var(--muted-foreground,#94a3b8)] hover:text-white">✕</button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold mb-1 text-[var(--muted-foreground,#94a3b8)]">Mermaid (Obsidian, Notion, GitHub)</label>
+          <textarea id="mermaid-output" readonly rows="6" class="w-full bg-[var(--background,#0f172a)] border border-[var(--border,#334155)] rounded-xl p-2.5 text-xs font-mono text-indigo-300 select-all"></textarea>
+        </div>
+
+        <div class="flex flex-wrap gap-2 justify-between items-center pt-2">
+          <button onclick="copyMermaid()" id="copy-btn" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition">
+            Copiar Mermaid
+          </button>
+          <div class="flex gap-2">
+            <button onclick="downloadJsonState()" class="px-3 py-2 bg-[var(--secondary,#334155)] hover:bg-[var(--secondary,#334155)]/80 text-white rounded-lg text-xs font-medium transition">
+              Descargar JSON
+            </button>
+            <label class="px-3 py-2 bg-[var(--secondary,#334155)] hover:bg-[var(--secondary,#334155)]/80 text-white rounded-lg text-xs font-medium cursor-pointer transition">
+              Cargar JSON
+              <input type="file" id="import-json-file" accept=".json" onchange="importJsonState(event)" class="hidden">
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LÓGICA DE CONTROL Y PERSISTENCIA -->
+  <script>
+    const STORAGE_KEY = 'mindsync_state_v1';
+    const API_KEY_STORAGE = 'mindsync_gemini_key';
+
+    // DATOS POR DEFECTO
+    const DEFAULT_STATE = {
+      updatedAt: new Date().toISOString(),
+      agenda: [
+        {
+          id: "evt-1",
+          title: "Reunión de Sincronización de Producto",
+          date: "2026-11-02",
+          time: "10:00 - 11:00",
+          category: "Proyectos",
+          priority: "Alta",
+          status: "pending",
+          notes: "Definir arquitectura y entregables del MVP."
+        },
+        {
+          id: "evt-2",
+          title: "Llamada con contador (impuestos & balances)",
+          date: "2026-11-02",
+          time: "15:30 - 16:00",
+          category: "Finanzas",
+          priority: "Media",
+          status: "pending",
+          notes: "Revisar facturación mensual y cierre trimestral."
+        },
+        {
+          id: "evt-3",
+          title: "Bloque de Deep Work: Desarrollo Backend",
+          date: "2026-11-03",
+          time: "09:00 - 12:00",
+          category: "Desarrollo",
+          priority: "Alta",
+          status: "pending",
+          notes: "Implementar pipeline de procesamiento con Gemini."
+        },
+        {
+          id: "evt-4",
+          title: "Entrenamiento físico / Gimnasio",
+          date: "2026-11-03",
+          time: "18:30 - 20:00",
+          category: "Salud",
+          priority: "Media",
+          status: "pending",
+          notes: "Rutina de fuerza y movilidad."
+        }
+      ],
+      tasks: [
+        {
+          id: "tsk-1",
+          title: "Investigar integración con Google Calendar API",
+          dueDate: "2026-11-02",
+          priority: "Alta",
+          completed: false,
+          category: "Desarrollo",
+          linkedNodeId: "dev-cal"
+        },
+        {
+          id: "tsk-2",
+          title: "Diseñar esquema del grafo de conocimiento",
+          dueDate: "2026-11-02",
+          priority: "Alta",
+          completed: true,
+          category: "Estrategia",
+          linkedNodeId: "mindmap-core"
+        },
+        {
+          id: "tsk-3",
+          title: "Comprar insumos para la oficina",
+          dueDate: "2026-11-04",
+          priority: "Baja",
+          completed: false,
+          category: "Personal",
+          linkedNodeId: "vida"
+        }
+      ],
+      mindmap: {
+        nodes: [
+          { id: "root", label: "Mi Segundo Cerebro", category: "core", details: "Centro neurálgico de ideas, proyectos y vida diaria.", x: 450, y: 260 },
+          { id: "proj", label: "🚀 Proyectos Activos", category: "project", details: "Iniciativas en curso con impacto directo.", x: 230, y: 150 },
+          { id: "proj-agent", label: "Agente Agenda & Mapa", category: "project", details: "Sistema inteligente que procesa braindumps a calendario y grafo.", x: 80, y: 90 },
+          { id: "dev-cal", label: "Sync Google Calendar", category: "task", details: "Conexión bidireccional con eventos de calendario.", x: 70, y: 180 },
+          { id: "mindmap-core", label: "Grafo Conceptual", category: "concept", details: "Motor de relaciones semánticas entre ideas.", x: 80, y: 260 },
+          { id: "ideas", label: "💡 Incubadora de Ideas", category: "idea", details: "Pensamientos espontáneos, hipótesis y lecturas.", x: 670, y: 140 },
+          { id: "idea-voice", label: "Entrada por Notas de Voz", category: "idea", details: "Transcribir con Whisper/Gemini desde WhatsApp.", x: 840, y: 90 },
+          { id: "finanzas", label: "💰 Finanzas & Negocio", category: "business", details: "Facturación, clientes, contabilidad e inversiones.", x: 230, y: 390 },
+          { id: "vida", label: "🌱 Salud & Estilo de Vida", category: "life", details: "Hábitos, descanso, deporte y relaciones.", x: 660, y: 380 },
+          { id: "salud-gym", label: "Gimnasio & Nutrición", category: "life", details: "4 sesiones semanales + hidratación.", x: 830, y: 430 }
+        ],
+        links: [
+          { source: "root", target: "proj" },
+          { source: "proj", target: "proj-agent" },
+          { source: "proj-agent", target: "dev-cal" },
+          { source: "proj-agent", target: "mindmap-core" },
+          { source: "root", target: "ideas" },
+          { source: "ideas", target: "idea-voice" },
+          { source: "root", target: "finanzas" },
+          { source: "root", target: "vida" },
+          { source: "vida", target: "salud-gym" }
+        ]
+      }
+    };
+
+    // CARGAR O INICIALIZAR ESTADO PERSISTENTE
+    let state = loadPersistedState();
+    function loadPersistedState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.warn('Error leyendo localStorage:', e);
+      }
+      return JSON.parse(JSON.stringify(DEFAULT_STATE));
+    }
+
+    function persistState() {
+      state.updatedAt = new Date().toISOString();
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.warn('Error guardando en localStorage:', e);
+      }
+    }
+
+    // VARIABLES DE INTERACCIÓN GRAFO
+    let zoomLevel = 1;
+    let panOffset = { x: 0, y: 0 };
+    let isPanning = false;
+    let panStart = { x: 0, y: 0 };
+    let draggedNode = null;
+    let dragOffset = { x: 0, y: 0 };
+    let selectedNodeId = null;
+
+    // INICIO
+    window.addEventListener('DOMContentLoaded', () => {
+      renderMindMap();
+      renderAgenda();
+      renderTasks();
+      setupPanZoomAndTouch();
+
+      const savedKey = localStorage.getItem(API_KEY_STORAGE);
+      if (savedKey) document.getElementById('gemini-key-input').value = savedKey;
+    });
+
+    // RENDERIZADO DEL MAPA MENTAL
+    function renderMindMap() {
+      const linksGroup = document.getElementById('links-group');
+      const nodesGroup = document.getElementById('nodes-group');
+      const nodeCountEl = document.getElementById('node-count');
+
+      linksGroup.innerHTML = '';
+      nodesGroup.innerHTML = '';
+      nodeCountEl.textContent = `${state.mindmap.nodes.length} nodos`;
+
+      // 1. Enlaces
+      state.mindmap.links.forEach(link => {
+        const sourceNode = state.mindmap.nodes.find(n => n.id === link.source);
+        const targetNode = state.mindmap.nodes.find(n => n.id === link.target);
+        if (!sourceNode || !targetNode) return;
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const midX = (sourceNode.x + targetNode.x) / 2;
+        const d = `M ${sourceNode.x} ${sourceNode.y} C ${midX} ${sourceNode.y}, ${midX} ${targetNode.y}, ${targetNode.x} ${targetNode.y}`;
+        
+        path.setAttribute('d', d);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', '#64748b');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('stroke-opacity', '0.45');
+        path.id = `link-${link.source}-${link.target}`;
+        linksGroup.appendChild(path);
+      });
+
+      // 2. Nodos
+      state.mindmap.nodes.forEach(node => {
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('transform', `translate(${node.x}, ${node.y})`);
+        g.setAttribute('class', 'node-item node-transition cursor-pointer');
+        g.dataset.id = node.id;
+
+        const isRoot = node.id === 'root';
+        const rectWidth = isRoot ? 170 : Math.max(120, node.label.length * 8 + 32);
+        const rectHeight = isRoot ? 46 : 34;
+        const radius = isRoot ? 23 : 17;
+        const fillGrad = `url(#grad-${node.category || 'concept'})`;
+
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', -rectWidth / 2);
+        rect.setAttribute('y', -rectHeight / 2);
+        rect.setAttribute('width', rectWidth);
+        rect.setAttribute('height', rectHeight);
+        rect.setAttribute('rx', radius);
+        rect.setAttribute('fill', fillGrad);
+        rect.setAttribute('filter', 'url(#shadow)');
+        rect.setAttribute('stroke', '#ffffff');
+        rect.setAttribute('stroke-opacity', '0.25');
+        rect.setAttribute('stroke-width', '1.5');
+        g.appendChild(rect);
+
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dominant-baseline', 'central');
+        text.setAttribute('fill', '#ffffff');
+        text.setAttribute('font-size', isRoot ? '13' : '11');
+        text.setAttribute('font-weight', isRoot ? '700' : '600');
+        text.setAttribute('letter-spacing', '0.2px');
+        text.textContent = node.label;
+        g.appendChild(text);
+
+        // Click / Touch
+        g.addEventListener('mousedown', (e) => startNodeDrag(e.clientX, e.clientY, node));
+        g.addEventListener('touchstart', (e) => {
+          if (e.touches.length === 1) {
+            startNodeDrag(e.touches[0].clientX, e.touches[0].clientY, node);
+          }
+        }, { passive: false });
+
+        g.addEventListener('click', (e) => {
+          e.stopPropagation();
+          inspectNode(node);
+        });
+
+        nodesGroup.appendChild(g);
+      });
+    }
+
+    // ARRASTRE Y SOPORTE TOUCH
+    function startNodeDrag(clientX, clientY, node) {
+      draggedNode = node;
+      const svg = document.getElementById('mindmap-svg');
+      const pt = svg.createSVGPoint();
+      pt.x = clientX;
+      pt.y = clientY;
+      const cursorPt = pt.matrixTransform(svg.getScreenCTM().inverse());
+      dragOffset.x = (cursorPt.x - panOffset.x) / zoomLevel - node.x;
+      dragOffset.y = (cursorPt.y - panOffset.y) / zoomLevel - node.y;
+    }
+
+    function setupPanZoomAndTouch() {
+      const svg = document.getElementById('mindmap-svg');
+
+      // Mouse
+      svg.addEventListener('mousedown', (e) => {
+        if (e.button === 0 && !draggedNode) {
+          isPanning = true;
+          panStart.x = e.clientX - panOffset.x;
+          panStart.y = e.clientY - panOffset.y;
+        }
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        handlePointerMove(e.clientX, e.clientY);
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (draggedNode) persistState();
+        draggedNode = null;
+        isPanning = false;
+      });
+
+      // Touch móvil
+      svg.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1 && !draggedNode) {
+          isPanning = true;
+          panStart.x = e.touches[0].clientX - panOffset.x;
+          panStart.y = e.touches[0].clientY - panOffset.y;
+        }
+      }, { passive: true });
+
+      window.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 1) {
+          handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: false });
+
+      window.addEventListener('touchend', () => {
+        if (draggedNode) persistState();
+        draggedNode = null;
+        isPanning = false;
+      });
+
+      // Rueda zoom
+      svg.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        zoomMap(e.deltaY > 0 ? 0.92 : 1.08);
+      }, { passive: false });
+    }
+
+    function handlePointerMove(clientX, clientY) {
+      const svg = document.getElementById('mindmap-svg');
+      if (draggedNode) {
+        const pt = svg.createSVGPoint();
+        pt.x = clientX;
+        pt.y = clientY;
+        const cursorPt = pt.matrixTransform(svg.getScreenCTM().inverse());
+        draggedNode.x = (cursorPt.x - panOffset.x) / zoomLevel - dragOffset.x;
+        draggedNode.y = (cursorPt.y - panOffset.y) / zoomLevel - dragOffset.y;
+        updateLinksAndNode(draggedNode);
+      } else if (isPanning) {
+        panOffset.x = clientX - panStart.x;
+        panOffset.y = clientY - panStart.y;
+        updateViewportTransform();
+      }
+    }
+
+    function updateLinksAndNode(node) {
+      const g = document.querySelector(`.node-item[data-id="${node.id}"]`);
+      if (g) g.setAttribute('transform', `translate(${node.x}, ${node.y})`);
+
+      state.mindmap.links.forEach(link => {
+        if (link.source === node.id || link.target === node.id) {
+          const s = state.mindmap.nodes.find(n => n.id === link.source);
+          const t = state.mindmap.nodes.find(n => n.id === link.target);
+          const path = document.getElementById(`link-${link.source}-${link.target}`);
+          if (path && s && t) {
+            const midX = (s.x + t.x) / 2;
+            path.setAttribute('d', `M ${s.x} ${s.y} C ${midX} ${s.y}, ${midX} ${t.y}, ${t.x} ${t.y}`);
+          }
+        }
+      });
+    }
+
+    function updateViewportTransform() {
+      const group = document.getElementById('viewport-group');
+      group.setAttribute('transform', `translate(${panOffset.x}, ${panOffset.y}) scale(${zoomLevel})`);
+    }
+
+    function zoomMap(factor) {
+      zoomLevel = Math.max(0.4, Math.min(2.5, zoomLevel * factor));
+      updateViewportTransform();
+    }
+
+    function resetZoom() {
+      zoomLevel = 1;
+      panOffset = { x: 0, y: 0 };
+      updateViewportTransform();
+    }
+
+    // INSPECTOR
+    function inspectNode(node) {
+      selectedNodeId = node.id;
+      const inspector = document.getElementById('node-inspector');
+      document.getElementById('inspect-title').textContent = node.label;
+      document.getElementById('inspect-desc').textContent = node.details || 'Nodo temático.';
+      document.getElementById('inspect-tag').textContent = (node.category || 'concepto').toUpperCase();
+
+      const conns = state.mindmap.links.filter(l => l.source === node.id || l.target === node.id).length;
+      document.getElementById('inspect-conns').textContent = `${conns} conexiones`;
+      inspector.classList.remove('hidden');
+    }
+
+    function closeInspector() {
+      document.getElementById('node-inspector').classList.add('hidden');
+      selectedNodeId = null;
+    }
+
+    function deleteSelectedNode() {
+      if (!selectedNodeId || selectedNodeId === 'root') {
+        alert('No se puede eliminar el nodo principal.');
+        return;
+      }
+      state.mindmap.nodes = state.mindmap.nodes.filter(n => n.id !== selectedNodeId);
+      state.mindmap.links = state.mindmap.links.filter(l => l.source !== selectedNodeId && l.target !== selectedNodeId);
+      closeInspector();
+      persistState();
+      renderMindMap();
+    }
+
+    // AGENDA & TAREAS
+    function renderAgenda() {
+      const container = document.getElementById('events-list');
+      container.innerHTML = '';
+      document.getElementById('event-count').textContent = `${state.agenda.length} eventos`;
+
+      const priorityColors = {
+        Alta: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+        Media: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+        Baja: 'bg-sky-500/10 text-sky-400 border-sky-500/20'
+      };
+
+      state.agenda.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'p-3 rounded-xl bg-[var(--background,#0f172a)] border border-[var(--border,#334155)] hover:border-indigo-500/50 transition-all flex flex-col gap-1.5 shadow-sm text-xs';
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <h5 class="font-semibold text-[var(--foreground,#f8fafc)]">${item.title}</h5>
+              <div class="flex items-center gap-2 mt-0.5 text-[11px] text-[var(--muted-foreground,#94a3b8)]">
+                <span>🗓️ ${item.date}</span>
+                <span>⏰ ${item.time}</span>
+              </div>
+            </div>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${priorityColors[item.priority] || priorityColors.Media}">
+              ${item.priority}
+            </span>
+          </div>
+          <p class="text-[11px] text-[var(--muted-foreground,#94a3b8)] bg-[var(--card,#1e293b)]/50 px-2 py-1 rounded">
+            ${item.notes}
+          </p>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderTasks() {
+      const container = document.getElementById('tasks-list');
+      container.innerHTML = '';
+      const active = state.tasks.filter(t => !t.completed).length;
+      document.getElementById('task-count').textContent = `${active} activas`;
+
+      state.tasks.forEach(task => {
+        const item = document.createElement('div');
+        item.className = 'flex items-center justify-between p-2 rounded-lg bg-[var(--background,#0f172a)] border border-[var(--border,#334155)] text-xs transition';
+        item.innerHTML = `
+          <label class="flex items-center gap-2 cursor-pointer flex-1">
+            <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}')" class="rounded border-slate-700 text-indigo-600 focus:ring-0">
+            <span class="${task.completed ? 'line-through text-[var(--muted-foreground,#64748b)]' : 'text-[var(--foreground,#f8fafc)] font-medium'}">
+              ${task.title}
+            </span>
+          </label>
+          <span class="text-[10px] text-[var(--muted-foreground,#94a3b8)] px-1.5 py-0.5 rounded bg-[var(--card,#1e293b)]">
+            ${task.category}
+          </span>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function toggleTask(id) {
+      const task = state.tasks.find(t => t.id === id);
+      if (task) {
+        task.completed = !task.completed;
+        persistState();
+        renderTasks();
+      }
+    }
+
+    // PESTAÑAS
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-indigo-600', 'text-white');
+        btn.classList.add('text-[var(--muted-foreground,#94a3b8)]');
+      });
+      const activeBtn = document.getElementById(`tab-${tab}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-indigo-600', 'text-white');
+        activeBtn.classList.remove('text-[var(--muted-foreground,#94a3b8)]');
+      }
+
+      const splitView = document.getElementById('view-split');
+      const brainView = document.getElementById('view-braindump');
+      const secMap = document.getElementById('section-map');
+      const secAgenda = document.getElementById('section-agenda');
+
+      if (tab === 'braindump') {
+        splitView.classList.add('hidden');
+        brainView.classList.remove('hidden');
+      } else {
+        brainView.classList.add('hidden');
+        splitView.classList.remove('hidden');
+        if (tab === 'map') {
+          secMap.className = 'col-span-12 bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-2xl flex flex-col overflow-hidden shadow-sm relative h-full';
+          secMap.classList.remove('hidden');
+          secAgenda.classList.add('hidden');
+        } else if (tab === 'agenda') {
+          secMap.classList.add('hidden');
+          secAgenda.className = 'col-span-12 flex flex-col gap-4 overflow-hidden h-full';
+          secAgenda.classList.remove('hidden');
+        } else {
+          secMap.className = 'lg:col-span-7 bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-2xl flex flex-col overflow-hidden shadow-sm relative min-h-[350px]';
+          secMap.classList.remove('hidden');
+          secAgenda.className = 'lg:col-span-5 flex flex-col gap-4 overflow-hidden';
+          secAgenda.classList.remove('hidden');
+        }
+      }
+    }
+
+    // BRAINDUMP CON MOTOR HEURÍSTICO + OPCIONAL GEMINI
+    function fillExample(idx) {
+      const input = document.getElementById('braindump-input');
+      if (idx === 1) input.value = "Mañana martes a las 11:00 reunión de producto para definir entregables. Preparar antes el documento de requerimientos.";
+      else if (idx === 2) input.value = "Pensé en sumar un bot de WhatsApp para recibir notas de voz y alimentar el mapa mental con nodos automáticos.";
+      else input.value = "Agendar cita médica para el jueves a las 09:30. Y retomar hábito de entrenar 4 días por semana.";
+    }
+
+    async function processBraindump() {
+      const text = document.getElementById('braindump-input').value.trim();
+      if (!text) return;
+
+      const btn = document.getElementById('btn-process');
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳ Procesando...</span>';
+
+      const apiKey = localStorage.getItem(API_KEY_STORAGE);
+      const extractedItems = [];
+
+      // Si hay Gemini API Key en el navegador, intentamos llamar a Gemini REST API
+      if (apiKey) {
+        try {
+          const geminiResult = await callGeminiAPI(apiKey, text);
+          if (geminiResult) {
+            applyExtractedData(geminiResult, extractedItems);
+            finalizeProcess(extractedItems);
+            return;
+          }
+        } catch (err) {
+          console.warn('Fallo llamada Gemini en frontend, usando motor local:', err);
+        }
+      }
+
+      // Motor local heurístico
+      applyLocalHeuristic(text, extractedItems);
+      finalizeProcess(extractedItems);
+    }
+
+    function applyLocalHeuristic(text, extractedItems) {
+      const textLower = text.toLowerCase();
+      const isMeeting = textLower.includes('reunión') || textLower.includes('reunion') || textLower.includes('call') || textLower.includes('a las') || textLower.includes('cita');
+      const isIdea = textLower.includes('idea') || textLower.includes('pensé') || textLower.includes('pensando') || textLower.includes('proyecto');
+
+      const now = new Date();
+      now.setDate(now.getDate() + 1);
+      const dateStr = now.toISOString().split('T')[0];
+
+      if (isMeeting) {
+        const newEvt = {
+          id: `evt-${Date.now()}`,
+          title: text.split('.')[0].slice(0, 48),
+          date: dateStr,
+          time: "11:00 - 12:00",
+          category: "Reuniones",
+          priority: "Alta",
+          status: "pending",
+          notes: text
+        };
+        state.agenda.unshift(newEvt);
+        extractedItems.push(`📅 <b>Evento:</b> ${newEvt.title}`);
+      }
+
+      if (isIdea || !isMeeting) {
+        const nodeId = `node-${Date.now()}`;
+        const newLabel = text.length > 28 ? text.slice(0, 26) + '...' : text;
+        const newNode = {
+          id: nodeId,
+          label: `💡 ${newLabel}`,
+          category: isIdea ? "idea" : "project",
+          details: text,
+          x: 450 + (Math.random() * 160 - 80),
+          y: 260 + (Math.random() * 160 - 80)
+        };
+        state.mindmap.nodes.push(newNode);
+        state.mindmap.links.push({ source: isIdea ? "ideas" : "proj", target: nodeId });
+        extractedItems.push(`🧠 <b>Nodo:</b> ${newNode.label}`);
+      }
+
+      const newTask = {
+        id: `tsk-${Date.now()}`,
+        title: `Acción: ${text.slice(0, 45)}...`,
+        dueDate: dateStr,
+        priority: "Media",
+        completed: false,
+        category: "Seguimiento"
+      };
+      state.tasks.unshift(newTask);
+      extractedItems.push(`✅ <b>Tarea:</b> ${newTask.title}`);
+    }
+
+    async function callGeminiAPI(apiKey, text) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const prompt = `Analiza este texto y responde ÚNICAMENTE con JSON válido sin markdown:
+{"events":[{"title":"...","date":"YYYY-MM-DD","time":"HH:MM - HH:MM","category":"...","priority":"Alta|Media|Baja","notes":"..."}],"tasks":[{"title":"...","dueDate":"YYYY-MM-DD","priority":"Media","category":"..."}],"nodes":[{"label":"...","category":"idea|project|task","details":"...","connects_to":"ideas|proj|root"}]}
+Texto: "${text}"`;
+
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      });
+      const data = await resp.json();
+      const rawText = data.candidates[0].content.parts[0].text;
+      const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+      return JSON.parse(cleanJson);
+    }
+
+    function applyExtractedData(data, extractedItems) {
+      if (data.events) {
+        data.events.forEach(e => {
+          e.id = `evt-${Date.now()}-${Math.random()}`;
+          state.agenda.unshift(e);
+          extractedItems.push(`📅 <b>Evento:</b> ${e.title}`);
+        });
+      }
+      if (data.tasks) {
+        data.tasks.forEach(t => {
+          t.id = `tsk-${Date.now()}-${Math.random()}`;
+          t.completed = false;
+          state.tasks.unshift(t);
+          extractedItems.push(`✅ <b>Tarea:</b> ${t.title}`);
+        });
+      }
+      if (data.nodes) {
+        data.nodes.forEach(n => {
+          n.id = `node-${Date.now()}-${Math.random()}`;
+          n.x = 450 + (Math.random() * 160 - 80);
+          n.y = 260 + (Math.random() * 160 - 80);
+          state.mindmap.nodes.push(n);
+          state.mindmap.links.push({ source: n.connects_to || "ideas", target: n.id });
+          extractedItems.push(`🧠 <b>Nodo:</b> ${n.label}`);
+        });
+      }
+    }
+
+    function finalizeProcess(extractedItems) {
+      persistState();
+      renderMindMap();
+      renderAgenda();
+      renderTasks();
+
+      const btn = document.getElementById('btn-process');
+      btn.disabled = false;
+      btn.innerHTML = '<span>✨ Procesar y Guardar</span>';
+
+      const preview = document.getElementById('braindump-preview');
+      const summary = document.getElementById('extracted-summary');
+      summary.innerHTML = extractedItems.map(item => `<p class="py-0.5">${item}</p>`).join('');
+      preview.classList.remove('hidden');
+
+      setTimeout(() => { switchTab('split'); }, 1800);
+    }
+
+    // MODAL DE CONFIGURACIÓN
+    function openConfigModal() {
+      document.getElementById('config-modal').classList.remove('hidden');
+    }
+    function closeConfigModal() {
+      document.getElementById('config-modal').classList.add('hidden');
+    }
+    function saveApiKey() {
+      const key = document.getElementById('gemini-key-input').value.trim();
+      if (key) localStorage.setItem(API_KEY_STORAGE, key);
+      else localStorage.removeItem(API_KEY_STORAGE);
+      closeConfigModal();
+      alert('Configuración guardada.');
+    }
+    function resetDataConfirmation() {
+      if (confirm('¿Restablecer todo a los datos iniciales? Se perderán las notas personalizadas no exportadas.')) {
+        localStorage.removeItem(STORAGE_KEY);
+        state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+        persistState();
+        renderMindMap();
+        renderAgenda();
+        renderTasks();
+        closeConfigModal();
+      }
+    }
+
+    // EXPORTAR & IMPORTAR
+    function openExportModal() {
+      const modal = document.getElementById('export-modal');
+      const output = document.getElementById('mermaid-output');
+
+      let mermaid = "flowchart LR\n";
+      state.mindmap.nodes.forEach(n => {
+        mermaid += `    ${n.id}["${n.label.replace(/"/g, "'")}"]\n`;
+      });
+      state.mindmap.links.forEach(l => {
+        mermaid += `    ${l.source} --> ${l.target}\n`;
+      });
+
+      output.value = mermaid;
+      modal.classList.remove('hidden');
+    }
+    function closeExportModal() {
+      document.getElementById('export-modal').classList.add('hidden');
+    }
+    function copyMermaid() {
+      const output = document.getElementById('mermaid-output');
+      output.select();
+      navigator.clipboard.writeText(output.value);
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = '¡Copiado!';
+      setTimeout(() => { btn.textContent = 'Copiar Mermaid'; }, 1500);
+    }
+    function downloadJsonState() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+      const dl = document.createElement('a');
+      dl.setAttribute("href", dataStr);
+      dl.setAttribute("download", `mindsync_backup_${new Date().toISOString().slice(0,10)}.json`);
+      dl.click();
+    }
+    function importJsonState(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (imported.mindmap && imported.agenda) {
+            state = imported;
+            persistState();
+            renderMindMap();
+            renderAgenda();
+            renderTasks();
+            closeExportModal();
+            alert('¡Datos importados con éxito!');
+          } else {
+            alert('El archivo JSON no tiene la estructura requerida.');
+          }
+        } catch (err) {
+          alert('Error leyendo el archivo JSON: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+  </script>
+</body>
+</html>
