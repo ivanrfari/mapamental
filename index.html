@@ -7,14 +7,20 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>MindSync Agent — Segundo Cerebro & Agenda</title>
+  
+  <!-- Tailwind CSS -->
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  
+  <!-- Firebase SDKs (Compatibles y oficiales de Google) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
   <style>
-    /* Transiciones y toque móvil fluido */
     .node-transition {
-      transition: transform 0.1s ease-out;
+      transition: transform 0.08s ease-out;
     }
     .node-item:hover {
-      filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.4));
+      filter: drop-shadow(0 4px 14px rgba(99, 102, 241, 0.45));
       cursor: grab;
     }
     .node-item:active {
@@ -31,7 +37,6 @@
       background: rgba(148, 163, 184, 0.25);
       border-radius: 4px;
     }
-    /* Deshabilitar selección de texto durante arrastre en móvil */
     .no-select {
       -webkit-touch-callout: none;
       -webkit-user-select: none;
@@ -50,12 +55,14 @@
       <div>
         <div class="flex items-center gap-2">
           <h1 class="font-bold text-base leading-tight tracking-tight text-[var(--foreground,#f8fafc)]">MindSync</h1>
-          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            Sync
-          </span>
+          
+          <!-- Badge de sincronización Firebase / Local -->
+          <button onclick="openConfigModal()" id="sync-status-badge" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition cursor-pointer">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+            <span id="sync-status-text">Memoria Local</span>
+          </button>
         </div>
-        <p class="text-[11px] text-[var(--muted-foreground,#94a3b8)] hidden sm:block">Agenda & Mapa Mental Autónomo</p>
+        <p class="text-[11px] text-[var(--muted-foreground,#94a3b8)] hidden sm:block">Segundo Cerebro con Sincronización en Tiempo Real</p>
       </div>
     </div>
 
@@ -77,8 +84,8 @@
 
     <!-- Acciones Rápidas -->
     <div class="flex items-center gap-2">
-      <button onclick="openConfigModal()" class="p-2 text-xs font-medium rounded-lg border border-[var(--border,#334155)] bg-[var(--card,#1e293b)] hover:bg-[var(--secondary,#334155)] text-[var(--muted-foreground,#94a3b8)] hover:text-white transition" title="Configurar API Key / Gemini">
-        ⚙️
+      <button onclick="openConfigModal()" class="p-2 text-xs font-medium rounded-lg border border-[var(--border,#334155)] bg-[var(--card,#1e293b)] hover:bg-[var(--secondary,#334155)] text-[var(--muted-foreground,#94a3b8)] hover:text-white transition flex items-center gap-1" title="Configurar Firebase / Gemini">
+        <span>⚙️</span> <span class="hidden sm:inline text-[11px]">Sincronización</span>
       </button>
       <button onclick="openExportModal()" class="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[var(--border,#334155)] bg-[var(--card,#1e293b)] hover:bg-[var(--secondary,#334155)] transition flex items-center gap-1 text-[var(--foreground,#f8fafc)]">
         <span>💾</span> <span class="hidden sm:inline">Exportar</span>
@@ -100,7 +107,7 @@
         <div class="p-3 border-b border-[var(--border,#334155)] flex items-center justify-between bg-[var(--card,#1e293b)]/70">
           <div class="flex items-center gap-2">
             <span class="text-sm font-semibold text-[var(--foreground,#f8fafc)]">🗺️ Grafo Conceptual</span>
-            <span id="node-count" class="text-[11px] px-2 py-0.5 rounded-full bg-[var(--secondary,#334155)] text-[var(--muted-foreground,#94a3b8)]">11 nodos</span>
+            <span id="node-count" class="text-[11px] px-2 py-0.5 rounded-full bg-[var(--secondary,#334155)] text-[var(--muted-foreground,#94a3b8)]">10 nodos</span>
           </div>
           <div class="flex items-center gap-1.5">
             <button onclick="resetZoom()" class="px-2 py-1 text-xs border border-[var(--border,#334155)] rounded-lg hover:bg-[var(--secondary,#334155)]" title="Centrar">🎯</button>
@@ -183,9 +190,9 @@
           <div class="p-3 border-b border-[var(--border,#334155)] flex items-center justify-between bg-[var(--card,#1e293b)]/70">
             <div class="flex items-center gap-2">
               <span class="text-sm font-semibold text-[var(--foreground,#f8fafc)]">📅 Agenda & Cronograma</span>
-              <span id="event-count" class="text-[11px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">5 eventos</span>
+              <span id="event-count" class="text-[11px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">4 eventos</span>
             </div>
-            <span class="text-[11px] text-[var(--muted-foreground,#94a3b8)]">Sincronizado</span>
+            <span class="text-[11px] text-[var(--muted-foreground,#94a3b8)]" id="cloud-indicator">Sync activo</span>
           </div>
           <div id="events-list" class="flex-1 p-3 overflow-y-auto space-y-2.5 custom-scrollbar"></div>
         </div>
@@ -209,7 +216,7 @@
       <div class="flex items-center justify-between mb-4">
         <div>
           <h2 class="text-base sm:text-lg font-bold text-[var(--foreground,#f8fafc)]">✨ Asistente de Braindump</h2>
-          <p class="text-xs text-[var(--muted-foreground,#94a3b8)]">Vuelca pensamientos, audios o reuniones. El agente los clasifica automáticamente en tu agenda y en tu mapa mental.</p>
+          <p class="text-xs text-[var(--muted-foreground,#94a3b8)]">Vuelca pensamientos, audios o reuniones. Se sincronizarán automáticamente con todos tus dispositivos conectados.</p>
         </div>
         <button onclick="switchTab('split')" class="text-xs text-[var(--muted-foreground,#94a3b8)] hover:text-white p-1">✕ Cerrar</button>
       </div>
@@ -225,13 +232,13 @@
           </div>
 
           <button onclick="processBraindump()" id="btn-process" class="px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium text-xs rounded-xl shadow-md flex items-center gap-2 transition ml-auto">
-            <span>✨ Procesar y Guardar</span>
+            <span>✨ Procesar y Sincronizar</span>
           </button>
         </div>
 
         <div id="braindump-preview" class="hidden mt-4 p-4 rounded-xl bg-[var(--background,#0f172a)] border border-emerald-500/30 text-xs space-y-2">
           <div class="flex items-center gap-2 text-emerald-400 font-semibold">
-            <span>✓</span> Elementos extraídos y organizados con éxito:
+            <span>✓</span> Elementos extraídos y sincronizados con éxito:
           </div>
           <div id="extracted-summary" class="text-[var(--muted-foreground,#94a3b8)] pl-3"></div>
         </div>
@@ -240,27 +247,48 @@
 
   </main>
 
-  <!-- MODAL DE CONFIGURACIÓN DE API KEY (GEMINI) -->
+  <!-- MODAL DE CONFIGURACIÓN (FIREBASE + GEMINI) -->
   <div id="config-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-2xl max-w-md w-full p-6 shadow-2xl">
+    <div class="bg-[var(--card,#1e293b)] border border-[var(--border,#334155)] rounded-2xl max-w-lg w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
       <div class="flex items-center justify-between pb-3 border-b border-[var(--border,#334155)] mb-4">
-        <h3 class="font-bold text-sm text-[var(--foreground,#f8fafc)]">⚙️ Configuración del Agente</h3>
+        <h3 class="font-bold text-sm text-[var(--foreground,#f8fafc)] flex items-center gap-2">
+          <span>🔥</span> Sincronización en Tiempo Real (Firebase)
+        </h3>
         <button onclick="closeConfigModal()" class="text-xs text-[var(--muted-foreground,#94a3b8)] hover:text-white">✕</button>
       </div>
 
       <div class="space-y-4 text-xs">
-        <div>
-          <label class="block font-semibold mb-1 text-[var(--muted-foreground,#94a3b8)]">Gemini API Key (Opcional)</label>
-          <input type="password" id="gemini-key-input" placeholder="AIzaSy..." class="w-full bg-[var(--background,#0f172a)] border border-[var(--border,#334155)] rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
-          <p class="text-[11px] text-[var(--muted-foreground,#64748b)] mt-1">Si la agregas, el braindump en GitHub Pages usará la IA de Gemini para clasificaciones complejas. Si no, usa el motor local inteligente sin costo.</p>
+        
+        <!-- ESTADO ACTUAL FIREBASE -->
+        <div id="firebase-active-banner" class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300">
+          <p class="font-semibold text-xs">Estado: Modo Memoria Local</p>
+          <p class="text-[11px] text-[var(--muted-foreground,#94a3b8)] mt-0.5">Para sincronizar en vivo entre tu teléfono, tablet y computadora, pega aquí la configuración de tu proyecto Firebase (gratuito).</p>
         </div>
 
-        <div class="pt-2 flex justify-between items-center">
-          <button onclick="saveApiKey()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition">
-            Guardar Clave
+        <!-- CONFIG FIREBASE INPUT -->
+        <div>
+          <label class="block font-semibold mb-1 text-[var(--muted-foreground,#94a3b8)]">
+            Objeto de Configuración Firebase (JSON o JS)
+          </label>
+          <textarea id="firebase-config-input" rows="7" placeholder='{\n  "apiKey": "AIzaSy...",\n  "authDomain": "tu-proyecto.firebaseapp.com",\n  "projectId": "tu-proyecto",\n  "storageBucket": "tu-proyecto.appspot.com",\n  "messagingSenderId": "...",\n  "appId": "..."\n}' class="w-full bg-[var(--background,#0f172a)] border border-[var(--border,#334155)] rounded-xl p-3 text-xs font-mono text-white focus:outline-none focus:border-indigo-500"></textarea>
+          <p class="text-[11px] text-[var(--muted-foreground,#64748b)] mt-1">Obtén esto en Firebase Console &gt; Configuración del proyecto &gt; Tus apps &gt; Web (&lt;/&gt;).</p>
+        </div>
+
+        <!-- GEMINI API KEY -->
+        <div class="pt-3 border-t border-[var(--border,#334155)]">
+          <label class="block font-semibold mb-1 text-[var(--muted-foreground,#94a3b8)]">Gemini API Key (Opcional para IA avanzada)</label>
+          <input type="password" id="gemini-key-input" placeholder="AIzaSy..." class="w-full bg-[var(--background,#0f172a)] border border-[var(--border,#334155)] rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div class="pt-3 border-t border-[var(--border,#334155)] flex flex-wrap justify-between items-center gap-2">
+          <button onclick="saveConfigurations()" class="px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-lg font-medium transition shadow-sm">
+            Guardar y Conectar
           </button>
-          <button onclick="resetDataConfirmation()" class="px-3 py-2 text-rose-400 hover:text-rose-300 transition">
-            Restablecer Datos
+          <button onclick="disconnectFirebase()" id="btn-disconnect-fb" class="px-3 py-2 text-rose-400 hover:text-rose-300 text-xs hidden transition">
+            Desconectar Firebase
+          </button>
+          <button onclick="resetDataConfirmation()" class="px-3 py-2 text-[var(--muted-foreground,#94a3b8)] hover:text-white text-xs transition">
+            Restablecer a valores de fábrica
           </button>
         </div>
       </div>
@@ -299,12 +327,12 @@
     </div>
   </div>
 
-  <!-- LÓGICA DE CONTROL Y PERSISTENCIA -->
+  <!-- SCRIPT CON FIREBASE REALTIME Y PERSISTENCIA -->
   <script>
     const STORAGE_KEY = 'mindsync_state_v1';
+    const FIREBASE_CONFIG_KEY = 'mindsync_firebase_config';
     const API_KEY_STORAGE = 'mindsync_gemini_key';
 
-    // DATOS POR DEFECTO
     const DEFAULT_STATE = {
       updatedAt: new Date().toISOString(),
       agenda: [
@@ -405,8 +433,12 @@
       }
     };
 
-    // CARGAR O INICIALIZAR ESTADO PERSISTENTE
     let state = loadPersistedState();
+    let db = null;
+    let unsubscribeFirestore = null;
+    let isRemoteUpdate = false;
+    let syncDebounceTimer = null;
+
     function loadPersistedState() {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
@@ -417,12 +449,105 @@
       return JSON.parse(JSON.stringify(DEFAULT_STATE));
     }
 
-    function persistState() {
+    function persistState(syncRemote = true) {
       state.updatedAt = new Date().toISOString();
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       } catch (e) {
         console.warn('Error guardando en localStorage:', e);
+      }
+
+      if (syncRemote && db) {
+        scheduleFirestoreSync();
+      }
+    }
+
+    // SINCRONIZACIÓN CON FIRESTORE (DEBOUNCED)
+    function scheduleFirestoreSync() {
+      if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
+      syncDebounceTimer = setTimeout(() => {
+        if (!db) return;
+        db.collection('mindsync').doc('state').set(state)
+          .then(() => {
+            console.log('✓ Estado sincronizado en tiempo real con Firebase.');
+          })
+          .catch(err => {
+            console.error('Error sincronizando con Firebase:', err);
+          });
+      }, 250);
+    }
+
+    // INICIALIZACIÓN DE FIREBASE
+    function initFirebaseFromStorage() {
+      const savedConfig = localStorage.getItem(FIREBASE_CONFIG_KEY);
+      if (!savedConfig) {
+        updateSyncBadge(false);
+        return;
+      }
+
+      try {
+        const config = JSON.parse(savedConfig);
+        if (!firebase.apps.length) {
+          firebase.initializeApp(config);
+        }
+        db = firebase.firestore();
+
+        // Escuchar cambios en vivo desde cualquier dispositivo
+        if (unsubscribeFirestore) unsubscribeFirestore();
+        unsubscribeFirestore = db.collection('mindsync').doc('state').onSnapshot((doc) => {
+          if (doc.exists) {
+            const remoteData = doc.data();
+            if (remoteData && remoteData.updatedAt !== state.updatedAt) {
+              isRemoteUpdate = true;
+              state = remoteData;
+              persistState(false);
+              renderMindMap();
+              renderAgenda();
+              renderTasks();
+              isRemoteUpdate = false;
+            }
+          } else {
+            // Primer inicio en Firestore: guardar el estado inicial
+            scheduleFirestoreSync();
+          }
+        }, (error) => {
+          console.error("Error en escucha Firebase:", error);
+          updateSyncBadge(false, "Error de Conexión");
+        });
+
+        updateSyncBadge(true);
+        document.getElementById('firebase-config-input').value = JSON.stringify(config, null, 2);
+        document.getElementById('btn-disconnect-fb').classList.remove('hidden');
+      } catch (err) {
+        console.error("Configuración de Firebase inválida:", err);
+        updateSyncBadge(false, "Config Inválida");
+      }
+    }
+
+    function updateSyncBadge(isConnected, customText = null) {
+      const badge = document.getElementById('sync-status-badge');
+      const text = document.getElementById('sync-status-text');
+      const banner = document.getElementById('firebase-active-banner');
+      const indicator = document.getElementById('cloud-indicator');
+
+      if (isConnected) {
+        badge.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition cursor-pointer';
+        badge.querySelector('span').className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse';
+        text.textContent = '🔥 En Vivo (Firebase)';
+        if (banner) {
+          banner.className = 'p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300';
+          banner.innerHTML = '<p class="font-semibold text-xs">✓ Conectado a Firebase en Tiempo Real</p><p class="text-[11px] text-[var(--muted-foreground,#94a3b8)] mt-0.5">Tus cambios se reflejan al instante en todos tus dispositivos.</p>';
+        }
+        if (indicator) indicator.textContent = 'En vivo en la nube';
+      } else {
+        badge.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition cursor-pointer';
+        badge.querySelector('span').className = 'w-1.5 h-1.5 rounded-full bg-amber-400';
+        text.textContent = customText || 'Memoria Local';
+        if (banner) {
+          banner.className = 'p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300';
+          banner.innerHTML = '<p class="font-semibold text-xs">Estado: Modo Memoria Local</p><p class="text-[11px] text-[var(--muted-foreground,#94a3b8)] mt-0.5">Pega la configuración de tu proyecto Firebase para habilitar sincronización en vivo multidispositivo.</p>';
+        }
+        if (indicator) indicator.textContent = 'Guardado local';
       }
     }
 
@@ -435,15 +560,15 @@
     let dragOffset = { x: 0, y: 0 };
     let selectedNodeId = null;
 
-    // INICIO
     window.addEventListener('DOMContentLoaded', () => {
       renderMindMap();
       renderAgenda();
       renderTasks();
       setupPanZoomAndTouch();
+      initFirebaseFromStorage();
 
-      const savedKey = localStorage.getItem(API_KEY_STORAGE);
-      if (savedKey) document.getElementById('gemini-key-input').value = savedKey;
+      const savedGeminiKey = localStorage.getItem(API_KEY_STORAGE);
+      if (savedGeminiKey) document.getElementById('gemini-key-input').value = savedGeminiKey;
     });
 
     // RENDERIZADO DEL MAPA MENTAL
@@ -456,7 +581,6 @@
       nodesGroup.innerHTML = '';
       nodeCountEl.textContent = `${state.mindmap.nodes.length} nodos`;
 
-      // 1. Enlaces
       state.mindmap.links.forEach(link => {
         const sourceNode = state.mindmap.nodes.find(n => n.id === link.source);
         const targetNode = state.mindmap.nodes.find(n => n.id === link.target);
@@ -475,7 +599,6 @@
         linksGroup.appendChild(path);
       });
 
-      // 2. Nodos
       state.mindmap.nodes.forEach(node => {
         const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         g.setAttribute('transform', `translate(${node.x}, ${node.y})`);
@@ -511,7 +634,6 @@
         text.textContent = node.label;
         g.appendChild(text);
 
-        // Click / Touch
         g.addEventListener('mousedown', (e) => startNodeDrag(e.clientX, e.clientY, node));
         g.addEventListener('touchstart', (e) => {
           if (e.touches.length === 1) {
@@ -528,7 +650,6 @@
       });
     }
 
-    // ARRASTRE Y SOPORTE TOUCH
     function startNodeDrag(clientX, clientY, node) {
       draggedNode = node;
       const svg = document.getElementById('mindmap-svg');
@@ -543,7 +664,6 @@
     function setupPanZoomAndTouch() {
       const svg = document.getElementById('mindmap-svg');
 
-      // Mouse
       svg.addEventListener('mousedown', (e) => {
         if (e.button === 0 && !draggedNode) {
           isPanning = true;
@@ -562,7 +682,6 @@
         isPanning = false;
       });
 
-      // Touch móvil
       svg.addEventListener('touchstart', (e) => {
         if (e.touches.length === 1 && !draggedNode) {
           isPanning = true;
@@ -583,7 +702,6 @@
         isPanning = false;
       });
 
-      // Rueda zoom
       svg.addEventListener('wheel', (e) => {
         e.preventDefault();
         zoomMap(e.deltaY > 0 ? 0.92 : 1.08);
@@ -640,7 +758,6 @@
       updateViewportTransform();
     }
 
-    // INSPECTOR
     function inspectNode(node) {
       selectedNodeId = node.id;
       const inspector = document.getElementById('node-inspector');
@@ -779,7 +896,6 @@
       }
     }
 
-    // BRAINDUMP CON MOTOR HEURÍSTICO + OPCIONAL GEMINI
     function fillExample(idx) {
       const input = document.getElementById('braindump-input');
       if (idx === 1) input.value = "Mañana martes a las 11:00 reunión de producto para definir entregables. Preparar antes el documento de requerimientos.";
@@ -798,7 +914,6 @@
       const apiKey = localStorage.getItem(API_KEY_STORAGE);
       const extractedItems = [];
 
-      // Si hay Gemini API Key en el navegador, intentamos llamar a Gemini REST API
       if (apiKey) {
         try {
           const geminiResult = await callGeminiAPI(apiKey, text);
@@ -812,7 +927,6 @@
         }
       }
 
-      // Motor local heurístico
       applyLocalHeuristic(text, extractedItems);
       finalizeProcess(extractedItems);
     }
@@ -915,14 +1029,14 @@ Texto: "${text}"`;
     }
 
     function finalizeProcess(extractedItems) {
-      persistState();
+      persistState(true);
       renderMindMap();
       renderAgenda();
       renderTasks();
 
       const btn = document.getElementById('btn-process');
       btn.disabled = false;
-      btn.innerHTML = '<span>✨ Procesar y Guardar</span>';
+      btn.innerHTML = '<span>✨ Procesar y Sincronizar</span>';
 
       const preview = document.getElementById('braindump-preview');
       const summary = document.getElementById('extracted-summary');
@@ -939,18 +1053,57 @@ Texto: "${text}"`;
     function closeConfigModal() {
       document.getElementById('config-modal').classList.add('hidden');
     }
-    function saveApiKey() {
-      const key = document.getElementById('gemini-key-input').value.trim();
-      if (key) localStorage.setItem(API_KEY_STORAGE, key);
+
+    function saveConfigurations() {
+      const rawFirebase = document.getElementById('firebase-config-input').value.trim();
+      const geminiKey = document.getElementById('gemini-key-input').value.trim();
+
+      if (geminiKey) localStorage.setItem(API_KEY_STORAGE, geminiKey);
       else localStorage.removeItem(API_KEY_STORAGE);
+
+      if (rawFirebase) {
+        try {
+          // Limpiar si viene con "const firebaseConfig = "
+          let cleanStr = rawFirebase;
+          if (cleanStr.includes('=')) cleanStr = cleanStr.substring(cleanStr.indexOf('=') + 1);
+          if (cleanStr.endsWith(';')) cleanStr = cleanStr.slice(0, -1);
+          
+          // Evaluar o parsear objeto
+          const parsed = (new Function(`return ${cleanStr}`))();
+          if (parsed && parsed.projectId) {
+            localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(parsed));
+            initFirebaseFromStorage();
+            alert('¡Configuración de Firebase guardada! Conectando en tiempo real...');
+          } else {
+            alert('El objeto de configuración debe incluir al menos "projectId".');
+            return;
+          }
+        } catch (err) {
+          alert('Error leyendo la configuración de Firebase: ' + err.message);
+          return;
+        }
+      }
+
       closeConfigModal();
-      alert('Configuración guardada.');
     }
+
+    function disconnectFirebase() {
+      if (confirm('¿Desconectar Firebase y volver a modo local?')) {
+        localStorage.removeItem(FIREBASE_CONFIG_KEY);
+        if (unsubscribeFirestore) unsubscribeFirestore();
+        db = null;
+        updateSyncBadge(false);
+        document.getElementById('firebase-config-input').value = '';
+        document.getElementById('btn-disconnect-fb').classList.add('hidden');
+        closeConfigModal();
+      }
+    }
+
     function resetDataConfirmation() {
       if (confirm('¿Restablecer todo a los datos iniciales? Se perderán las notas personalizadas no exportadas.')) {
         localStorage.removeItem(STORAGE_KEY);
         state = JSON.parse(JSON.stringify(DEFAULT_STATE));
-        persistState();
+        persistState(true);
         renderMindMap();
         renderAgenda();
         renderTasks();
@@ -1001,7 +1154,7 @@ Texto: "${text}"`;
           const imported = JSON.parse(e.target.result);
           if (imported.mindmap && imported.agenda) {
             state = imported;
-            persistState();
+            persistState(true);
             renderMindMap();
             renderAgenda();
             renderTasks();
