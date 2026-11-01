@@ -166,9 +166,11 @@
             </div>
             <h4 id="inspect-title" class="font-bold text-sm text-[var(--foreground,#f8fafc)] mb-1">Título</h4>
             <p id="inspect-desc" class="text-xs text-[var(--muted-foreground,#94a3b8)] mb-2.5">Detalles del nodo.</p>
-            <div class="border-t border-[var(--border,#334155)] pt-2 flex items-center justify-between text-xs">
+            <div class="border-t border-[var(--border,#334155)] pt-2.5 flex items-center justify-between text-xs">
               <span class="text-[var(--muted-foreground,#94a3b8)]" id="inspect-conns">Conexiones: 2</span>
-              <button onclick="deleteSelectedNode()" class="text-rose-400 hover:text-rose-300 text-[11px]">Eliminar nodo</button>
+              <button onclick="deleteSelectedNode()" class="px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 font-medium text-[11px] flex items-center gap-1 transition">
+                <span>🗑️</span> Eliminar nodo
+              </button>
             </div>
           </div>
 
@@ -789,7 +791,7 @@
 
       state.agenda.forEach(item => {
         const card = document.createElement('div');
-        card.className = 'p-3 rounded-xl bg-[var(--background,#0f172a)] border border-[var(--border,#334155)] hover:border-indigo-500/50 transition-all flex flex-col gap-1.5 shadow-sm text-xs';
+        card.className = 'p-3 rounded-xl bg-[var(--background,#0f172a)] border border-[var(--border,#334155)] hover:border-indigo-500/50 transition-all flex flex-col gap-1.5 shadow-sm text-xs relative group';
         card.innerHTML = `
           <div class="flex items-start justify-between gap-2">
             <div>
@@ -799,9 +801,14 @@
                 <span>⏰ ${item.time}</span>
               </div>
             </div>
-            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${priorityColors[item.priority] || priorityColors.Media}">
-              ${item.priority}
-            </span>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full border ${priorityColors[item.priority] || priorityColors.Media}">
+                ${item.priority}
+              </span>
+              <button onclick="deleteEvent('${item.id}')" class="p-1 rounded text-[var(--muted-foreground,#64748b)] hover:text-rose-400 hover:bg-rose-500/10 transition" title="Eliminar evento">
+                🗑️
+              </button>
+            </div>
           </div>
           <p class="text-[11px] text-[var(--muted-foreground,#94a3b8)] bg-[var(--card,#1e293b)]/50 px-2 py-1 rounded">
             ${item.notes}
@@ -809,6 +816,12 @@
         `;
         container.appendChild(card);
       });
+    }
+
+    function deleteEvent(id) {
+      state.agenda = state.agenda.filter(e => e.id !== id);
+      persistState(true);
+      renderAgenda();
     }
 
     function renderTasks() {
@@ -819,20 +832,31 @@
 
       state.tasks.forEach(task => {
         const item = document.createElement('div');
-        item.className = 'flex items-center justify-between p-2 rounded-lg bg-[var(--background,#0f172a)] border border-[var(--border,#334155)] text-xs transition';
+        item.className = 'flex items-center justify-between p-2 rounded-lg bg-[var(--background,#0f172a)] border border-[var(--border,#334155)] text-xs transition group hover:border-indigo-500/40';
         item.innerHTML = `
-          <label class="flex items-center gap-2 cursor-pointer flex-1">
+          <label class="flex items-center gap-2 cursor-pointer flex-1 mr-2">
             <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}')" class="rounded border-slate-700 text-indigo-600 focus:ring-0">
             <span class="${task.completed ? 'line-through text-[var(--muted-foreground,#64748b)]' : 'text-[var(--foreground,#f8fafc)] font-medium'}">
               ${task.title}
             </span>
           </label>
-          <span class="text-[10px] text-[var(--muted-foreground,#94a3b8)] px-1.5 py-0.5 rounded bg-[var(--card,#1e293b)]">
-            ${task.category}
-          </span>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] text-[var(--muted-foreground,#94a3b8)] px-1.5 py-0.5 rounded bg-[var(--card,#1e293b)]">
+              ${task.category}
+            </span>
+            <button onclick="deleteTask('${task.id}')" class="p-1 rounded text-[var(--muted-foreground,#64748b)] hover:text-rose-400 hover:bg-rose-500/10 transition" title="Eliminar tarea">
+              🗑️
+            </button>
+          </div>
         `;
         container.appendChild(item);
       });
+    }
+
+    function deleteTask(id) {
+      state.tasks = state.tasks.filter(t => t.id !== id);
+      persistState(true);
+      renderTasks();
     }
 
     function toggleTask(id) {
